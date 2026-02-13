@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block title %}Favorites{% endblock %}
+
+{% block content %}
+<div class="favorites-header">
+    <h1><i class="fas fa-heart"></i> Your Favorites</h1>
+    <p class="subtitle">All your loved songs in one place</p>
+</div>
+
+<div class="favorites-stats">
+    <div class="stat-card">
+        <i class="fas fa-music"></i>
+        <div class="stat-number" id="total-favorites">0</div>
+        <div>Favorite Songs</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-clock"></i>
+        <div class="stat-number" id="total-playtime">0</div>
+        <div>Minutes Listened</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-calendar"></i>
+        <div class="stat-number" id="favorite-month">-</div>
+        <div>Most Active Month</div>
+    </div>
+</div>
+
+<div class="favorites-controls">
+    <button class="play-all-btn" onclick="playAllFavorites()">
+        <i class="fas fa-play"></i> Play All
+    </button>
+    <button class="shuffle-btn" onclick="shuffleFavorites()">
+        <i class="fas fa-random"></i> Shuffle
+    </button>
+    <div class="sort-dropdown">
+        <select id="sort-favorites" onchange="sortFavorites(this.value)">
+            <option value="recent">Recently Added</option>
+            <option value="title">Title A-Z</option>
+            <option value="artist">Artist A-Z</option>
+            <option value="plays">Most Played</option>
+        </select>
+    </div>
+</div>
+
+<div class="favorites-view-options">
+    <button class="view-btn active" data-view="grid" onclick="switchFavoritesView('grid')">
+        <i class="fas fa-th"></i> Grid
+    </button>
+    <button class="view-btn" data-view="list" onclick="switchFavoritesView('list')">
+        <i class="fas fa-list"></i> List
+    </button>
+</div>
+
+<div id="favorites-container" class="favorites-grid">
+    <!-- Favorites will be loaded here -->
+    <div class="loading">
+        <i class="fas fa-heart" style="animation: pulse 1s infinite;"></i>
+        <p>Loading your favorites...</p>
+    </div>
+</div>
+
+<div id="empty-favorites" class="empty-state" style="display: none;">
+    <i class="fas fa-heart-broken"></i>
+    <h2>No favorites yet</h2>
+    <p>Start adding songs to your favorites by clicking the heart icon on any song</p>
+    <a href="{{ url_for('discover') }}" class="browse-btn">
+        <i class="fas fa-compass"></i> Discover Music
+    </a>
+</div>
+
+<!-- Create Playlist Modal -->
+<div id="playlist-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Add to Playlist</h2>
+        <div id="playlists-list" class="playlists-list">
+            <!-- Playlists will be loaded here -->
+        </div>
+        <button class="create-playlist-btn" onclick="createNewPlaylist()">
+            <i class="fas fa-plus"></i> Create New Playlist
+        </button>
+    </div>
+</div>
+
+<style>
+.favorites-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.favorites-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.favorites-header h1 i {
+    color: #ff4757;
+    animation: heartbeat 1.5s ease infinite;
+}
+
+@keyframes heartbeat {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.favorites-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.favorites-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.play-all-btn, .shuffle-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.play-all-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.play-all-btn:hover {
+    background: var(--secondary);
+    transform: translateY(-2px);
+}
+
+.shuffle-btn {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+.shuffle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.sort-dropdown select {
+    padding: 0.75rem 1.5rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 25px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+}
+
+.sort-dropdown select option {
+    background: var(--background);
+}
+
+.favorites-view-options {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.favorites-view-options .view-btn {
+    padding: 0.5rem 1rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.favorites-view-options .view-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Grid View */
+.favorites-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+/* List View */
+.favorites-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.favorite-list-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.favorite-list-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.favorite-list-item img {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.favorite-list-item .song-info {
+    flex: 1;
+}
+
+.favorite-list-item .song-info h4 {
+    margin-bottom: 0.25rem;
+}
+
+.favorite-list-item .song-info p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.favorite-list-item .added-date {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.favorite-list-item .actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.favorite-list-item .actions button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: color 0.3s ease;
+}
+
+.favorite-list-item .actions button:hover {
+    color: var(--primary);
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+}
+
+.empty-state i {
+    font-size: 5rem;
+    color: #ff4757;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h2 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state p {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+}
+
+.browse-btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: var(--primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.browse-btn:hover {
+    background: var(--secondary);
+    transform: translateY(-2px);
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--background);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.close {
+    float: right;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+.playlists-list {
+    margin: 1rem 0;
+}
+
+.playlist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+}
+
+.playlist-item button {
+    padding: 0.5rem 1rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Loading Animation */
+.loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+}
+
+.loading i {
+    font-size: 3rem;
+    color: #ff4757;
+    margin-bottom: 1rem;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentSongToAdd = null;
+let favoritesView = 'grid';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadFavorites();
+});
+
+function loadFavorites() {
+    fetch('/api/user/favorites')
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('favorites-container');
+            const emptyState = document.getElementById('empty-favorites');
+
+            if (data.favorites.length === 0) {
+                container.style.display = 'none';
+                emptyState.style.display = 'block';
+                updateStats([]);
+            } else {
+                container.style.display = favoritesView === 'grid' ? 'grid' : 'block';
+                emptyState.style.display = 'none';
+                displayFavorites(data.favorites);
+                updateStats(data.favorites);
+                document.getElementById('total-favorites').textContent = data.favorites.length;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading favorites:', error);
+        });
+}
+
+function displayFavorites(favorites) {
+    const container = document.getElementById('favorites-container');
+    container.className = favoritesView === 'grid' ? 'favorites-grid' : 'favorites-list';
+
+    if (favoritesView === 'grid') {
+        container.innerHTML = favorites.map(song => createFavoriteCard(song)).join('');
+    } else {
+        container.innerHTML = favorites.map(song => createFavoriteListItem(song)).join('');
+    }
+}
+
+function createFavoriteCard(song) {
+    return `
+        <div class="song-card favorite-card" data-song-id="${song.id}">
+            <img src="${song.cover_url || '/static/default-album.jpg'}" alt="${song.title}">
+            <div class="song-info">
+                <h3>${song.title}</h3>
+                <p>${song.artist}</p>
+                <small class="added-date">Added ${song.added_date}</small>
+            </div>
+            <button class="play-btn" onclick="playSong(${song.id})">
+                <i class="fas fa-play"></i>
+            </button>
+            <button class="favorite-btn active" onclick="toggleFavorite(${song.id}, this)">
+                <i class="fas fa-heart"></i>
+            </button>
+            <button class="more-btn" onclick="showSongOptions(${song.id}, event)">
+                <i class="fas fa-ellipsis-v"></i>
+            </button>
+        </div>
+    `;
+}
+
+function createFavoriteListItem(song) {
+    return `
+        <div class="favorite-list-item" data-song-id="${song.id}">
+            <img src="${song.cover_url || '/static/default-album.jpg'}" alt="${song.title}" onclick="playSong(${song.id})">
+            <div class="song-info" onclick="playSong(${song.id})">
+                <h4>${song.title}</h4>
+                <p>${song.artist}</p>
+            </div>
+            <div class="added-date">${song.added_date}</div>
+            <div class="actions">
+                <button onclick="playSong(${song.id})" title="Play">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button onclick="toggleFavorite(${song.id}, this)" title="Remove from favorites">
+                    <i class="fas fa-heart"></i>
+                </button>
+                <button onclick="showSongOptions(${song.id}, event)" title="More options">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function updateStats(favorites) {
+    // Calculate total playtime
+    const totalMinutes = favorites.reduce((sum, song) => sum + (song.duration || 0), 0) / 60;
+    document.getElementById('total-playtime').textContent = Math.round(totalMinutes);
+
+    // Find most active month
+    if (favorites.length > 0) {
+        const months = favorites.map(song => new Date(song.added_date).getMonth());
+        const mostCommonMonth = getMostFrequent(months);
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        document.getElementById('favorite-month').textContent = monthNames[mostCommonMonth] || '-';
+    }
+}
+
+function getMostFrequent(arr) {
+    return arr.sort((a,b) =>
+        arr.filter(v => v === a).length - arr.filter(v => v === b).length
+    ).pop();
+}
+
+function playAllFavorites() {
+    fetch('/api/user/favorites')
+        .then(response => response.json())
+        .then(data => {
+            if (data.favorites.length > 0) {
+                playSong(data.favorites[0].id);
+                // Queue up the rest
+                window.playlist = data.favorites.map(f => f.id);
+                window.currentIndex = 0;
+            }
+        });
+}
+
+function shuffleFavorites() {
+    fetch('/api/user/favorites')
+        .then(response => response.json())
+        .then(data => {
+            if (data.favorites.length > 0) {
+                const shuffled = [...data.favorites].sort(() => Math.random() - 0.5);
+                playSong(shuffled[0].id);
+                window.playlist = shuffled.map(f => f.id);
+                window.currentIndex = 0;
+            }
+        });
+}
+
+function sortFavorites(sortBy) {
+    fetch('/api/user/favorites')
+        .then(response => response.json())
+        .then(data => {
+            let sorted = [...data.favorites];
+
+            switch(sortBy) {
+                case 'recent':
+                    sorted.sort((a, b) => new Date(b.added_date) - new Date(a.added_date));
+                    break;
+                case 'title':
+                    sorted.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                case 'artist':
+                    sorted.sort((a, b) => a.artist.localeCompare(b.artist));
+                    break;
+                case 'plays':
+                    sorted.sort((a, b) => (b.plays || 0) - (a.plays || 0));
+                    break;
+            }
+
+            displayFavorites(sorted);
+        });
+}
+
+function switchFavoritesView(view) {
+    favoritesView = view;
+
+    // Update active button
+    document.querySelectorAll('.favorites-view-options .view-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Reload favorites with new view
+    loadFavorites();
+}
+
+function showSongOptions(songId, event) {
+    event.stopPropagation();
+    currentSongToAdd = songId;
+
+    // Show options modal
+    const modal = document.getElementById('playlist-modal');
+    modal.style.display = 'flex';
+
+    // Load playlists
+    fetch('/api/playlists')
+        .then(response => response.json())
+        .then(playlists => {
+            const list = document.getElementById('playlists-list');
+            if (playlists.length === 0) {
+                list.innerHTML = '<p class="no-playlists">No playlists yet</p>';
+            } else {
+                list.innerHTML = playlists.map(playlist => `
+                    <div class="playlist-item">
+                        <span>${playlist.name}</span>
+                        <button onclick="addToPlaylist(${playlist.id}, ${songId})">
+                            Add
+                        </button>
+                    </div>
+                `).join('');
+            }
+        });
+}
+
+function closeModal() {
+    document.getElementById('playlist-modal').style.display = 'none';
+}
+
+function createNewPlaylist() {
+    const name = prompt('Enter playlist name:');
+    if (name) {
+        fetch('/playlist/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name: name })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && currentSongToAdd) {
+                return fetch(`/playlist/${data.id}/add-song`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ song_id: currentSongToAdd })
+                });
+            }
+        })
+        .then(() => {
+            closeModal();
+            alert('Song added to new playlist!');
+        })
+        .catch(error => {
+            console.error('Error creating playlist:', error);
+        });
+    }
+}
+
+function addToPlaylist(playlistId, songId) {
+    fetch(`/playlist/${playlistId}/add-song`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ song_id: songId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeModal();
+            alert('Song added to playlist!');
+        }
+    })
+    .catch(error => {
+        console.error('Error adding to playlist:', error);
+    });
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('playlist-modal');
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
+{% endblock %}

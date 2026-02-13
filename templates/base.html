@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonance - {% block title %}Music Library{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="glass-container">
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fas fa-music"></i>
+                <span>Sonance</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="{{ url_for('library') }}"><i class="fas fa-library"></i> Library</a></li>
+                <li><a href="{{ url_for('discover') }}"><i class="fas fa-compact-disc"></i> Discover</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('favorites') }}"><i class="fas fa-heart"></i> Favorites</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}" onclick="alert('Please login to view your favorites')">
+                        <i class="fas fa-heart"></i> Favorites
+                    </a></li>
+                {% endif %}
+            </ul>
+
+            <!-- Playlists Section -->
+            <div class="your-playlists">
+                <h3>Your Playlists</h3>
+                <ul class="playlist-links" id="playlist-links">
+                    <!-- Playlists will be loaded dynamically -->
+                    {% if current_user.is_authenticated %}
+                        <li class="loading-playlists"><i class="fas fa-spinner fa-spin"></i> Loading...</li>
+                    {% else %}
+                        <li class="login-to-view">Login to view your playlists</li>
+                    {% endif %}
+                </ul>
+                {% if current_user.is_authenticated %}
+                <button class="create-playlist-btn-sidebar" onclick="createPlaylist()">
+                    <i class="fas fa-plus"></i> Create Playlist
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- User Profile Section with Register Link -->
+            <div class="user-profile">
+                <i class="fas fa-user-circle"></i>
+                {% if current_user.is_authenticated %}
+                    <div class="user-info">
+                        <span class="username">{{ current_user.username }}</span>
+                        <a href="{{ url_for('logout') }}" class="logout-link">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                {% else %}
+                    <div class="auth-links">
+                        <a href="{{ url_for('login') }}" class="login-link">Login</a>
+                        <span class="separator">|</span>
+                        <a href="{{ url_for('register') }}" class="register-link">Register</a>
+                    </div>
+                {% endif %}
+            </div>
+        </nav>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <div class="now-playing-bar">
+            <div class="song-info">
+                <img src="{{ url_for('static', filename='default-album.jpg') }}" alt="Now Playing" id="now-playing-cover">
+                <div>
+                    <div id="now-playing-title">Not Playing</div>
+                    <div id="now-playing-artist"></div>
+                </div>
+            </div>
+            <div class="player-controls">
+                <button id="prev-btn"><i class="fas fa-step-backward"></i></button>
+                <button id="play-pause-btn"><i class="fas fa-play"></i></button>
+                <button id="next-btn"><i class="fas fa-step-forward"></i></button>
+            </div>
+            <div class="volume-control">
+                <i class="fas fa-volume-up"></i>
+                <input type="range" id="volume-slider" min="0" max="100" value="70">
+            </div>
+        </div>
+    </div>
+
+    <audio id="audio-player"></audio>
+
+    <style>
+    /* Sidebar Playlists Styles */
+    .your-playlists {
+        margin-top: 2rem;
+        padding: 1rem;
+        border-top: 1px solid var(--glass-border);
+    }
+
+    .your-playlists h3 {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .playlist-links {
+        list-style: none;
+        margin-bottom: 1rem;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+
+    .playlist-links li {
+        margin-bottom: 0.5rem;
+    }
+
+    .playlist-links a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+    }
+
+    .playlist-links a:hover {
+        background: var(--glass-bg);
+        color: var(--text-primary);
+    }
+
+    .playlist-links a i {
+        font-size: 0.875rem;
+        color: var(--primary);
+    }
+
+    .loading-playlists, .login-to-view {
+        color: var(--text-muted);
+        text-align: center;
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .create-playlist-btn-sidebar {
+        width: 100%;
+        padding: 0.5rem;
+        background: transparent;
+        border: 1px dashed var(--primary);
+        border-radius: 5px;
+        color: var(--primary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+    }
+
+    .create-playlist-btn-sidebar:hover {
+        background: rgba(108, 92, 231, 0.1);
+    }
+
+    /* User Profile Styles */
+    .user-profile {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border-top: 1px solid var(--glass-border);
+        margin-top: auto;
+    }
+
+    .user-profile i {
+        font-size: 2rem;
+        color: var(--text-secondary);
+    }
+
+    .user-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .username {
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.9rem;
+    }
+
+    .logout-link {
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        transition: color 0.3s ease;
+    }
+
+    .logout-link:hover {
+        color: #ff4757;
+    }
+
+    .auth-links {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .login-link, .register-link {
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.875rem;
+        transition: color 0.3s ease;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .login-link:hover {
+        color: var(--primary);
+        background: rgba(108, 92, 231, 0.1);
+    }
+
+    .register-link {
+        background: var(--primary);
+        color: white;
+    }
+
+    .register-link:hover {
+        background: var(--secondary);
+        transform: translateY(-2px);
+    }
+
+    .separator {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+    }
+
+    /* Search Results Styles */
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--background);
+        border: 1px solid var(--glass-border);
+        border-radius: 10px;
+        margin-top: 0.5rem;
+        padding: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .search-results h4 {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        margin: 0.5rem 0;
+    }
+
+    .search-result-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+    }
+
+    .search-result-item:hover {
+        background: var(--glass-bg);
+    }
+
+    .search-result-item i {
+        color: var(--primary);
+        width: 20px;
+    }
+
+    .no-results {
+        text-align: center;
+        color: var(--text-muted);
+        padding: 1rem;
+    }
+    </style>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+// Load user playlists for sidebar
+function loadUserPlaylists() {
+    {% if current_user.is_authenticated %}
+    fetch('/api/playlists')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(playlists => {
+            const container = document.getElementById('playlist-links');
+            if (!container) return;
+
+            if (playlists.length === 0) {
+                container.innerHTML = '<li class="no-playlists">No playlists yet</li>';
+            } else {
+                container.innerHTML = playlists.map(playlist => {
+                    // Use Flask's url_for for the playlist endpoint
+                    // The endpoint name is 'playlist' (from the route function name)
+                    const playlistUrl = "{{ url_for('playlist', playlist_id=0) }}".replace('0', playlist.id);
+                    return `
+                        <li>
+                            <a href="${playlistUrl}">
+                                <i class="fas fa-list"></i> ${playlist.name}
+                            </a>
+                        </li>
+                    `;
+                }).join('');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading playlists:', error);
+            const container = document.getElementById('playlist-links');
+            if (container) {
+                container.innerHTML = '<li class="error">Failed to load playlists</li>';
+            }
+        });
+    {% endif %}
+}
+
+// Call when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserPlaylists();
+});
+</script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

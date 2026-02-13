@@ -1,0 +1,401 @@
+{% extends "base.html" %}
+
+{% block title %}{{ playlist.name }}{% endblock %}
+
+{% block content %}
+<div class="playlist-header">
+    <div class="playlist-cover">
+        <img src="{{ url_for('static', filename='uploads/covers/' + playlist.cover_image) }}" alt="{{ playlist.name }}">
+        <div class="play-count">
+            <i class="fas fa-music"></i> {{ playlist.songs|length }} songs
+        </div>
+    </div>
+
+    <div class="playlist-info">
+        <span class="playlist-type">Playlist</span>
+        <h1>{{ playlist.name }}</h1>
+        {% if playlist.description %}
+            <p class="playlist-description">{{ playlist.description }}</p>
+        {% endif %}
+        <div class="playlist-meta">
+            <span><i class="fas fa-user"></i> {{ playlist.owner.username }}</span>
+            <span><i class="fas fa-calendar"></i> Created {{ playlist.created_at.strftime('%b %d, %Y') }}</span>
+        </div>
+
+        <div class="playlist-actions">
+            <button class="play-all-btn" onclick="playAll()">
+                <i class="fas fa-play"></i> Play All
+            </button>
+            <button class="shuffle-btn" onclick="shufflePlay()">
+                <i class="fas fa-random"></i> Shuffle
+            </button>
+            {% if current_user.is_authenticated and current_user.id == playlist.user_id %}
+                <button class="edit-btn" onclick="editPlaylist()">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <button class="delete-btn" onclick="deletePlaylist()">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="playlist-songs">
+    <div class="songs-header">
+        <div class="song-number">#</div>
+        <div class="song-title">Title</div>
+        <div class="song-artist">Artist</div>
+        <div class="song-album">Album</div>
+        <div class="song-duration">Duration</div>
+        <div class="song-actions"></div>
+    </div>
+
+    <div class="songs-list" id="songs-list">
+        {% for song in playlist.songs %}
+        <div class="song-item" data-song-id="{{ song.id }}" data-index="{{ loop.index }}">
+            <div class="song-number">{{ loop.index }}</div>
+            <div class="song-title">
+                <img src="{{ url_for('static', filename='uploads/covers/' + (song.album.cover_image if song.album else 'default-album.jpg')) }}"
+                     alt="{{ song.title }}">
+                <span>{{ song.title }}</span>
+            </div>
+            <div class="song-artist">{{ song.artist.name }}</div>
+            <div class="song-album">{{ song.album.title if song.album else 'Single' }}</div>
+            <div class="song-duration">{{ (song.duration // 60) }}:{{ '%02d' % (song.duration % 60) }}</div>
+            <div class="song-actions">
+                <button class="play-song-btn" onclick="playSong({{ song.id }})">
+                    <i class="fas fa-play"></i>
+                </button>
+                {% if current_user.is_authenticated and current_user.id == playlist.user_id %}
+                <button class="remove-song-btn" onclick="removeFromPlaylist({{ playlist.id }}, {{ song.id }})">
+                    <i class="fas fa-times"></i>
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.playlist-header {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.playlist-cover {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.playlist-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.play-count {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.playlist-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.playlist-type {
+    color: var(--primary);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.playlist-info h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.playlist-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.playlist-meta {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.playlist-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.playlist-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.play-all-btn, .shuffle-btn, .edit-btn, .delete-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.play-all-btn {
+    background: var(--primary);
+    color: white;
+}
+
+.play-all-btn:hover {
+    background: var(--secondary);
+    transform: translateY(-2px);
+}
+
+.shuffle-btn {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-border);
+}
+
+.shuffle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.edit-btn {
+    background: #ffa502;
+    color: white;
+}
+
+.edit-btn:hover {
+    background: #ffb142;
+    transform: translateY(-2px);
+}
+
+.delete-btn {
+    background: #ff4757;
+    color: white;
+}
+
+.delete-btn:hover {
+    background: #ff6b81;
+    transform: translateY(-2px);
+}
+
+.playlist-songs {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+}
+
+.songs-header {
+    display: grid;
+    grid-template-columns: 50px 1fr 1fr 1fr 80px 50px;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--glass-border);
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.songs-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.song-item {
+    display: grid;
+    grid-template-columns: 50px 1fr 1fr 1fr 80px 50px;
+    padding: 0.75rem;
+    align-items: center;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.song-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.song-number {
+    color: var(--text-secondary);
+}
+
+.song-title {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.song-title img {
+    width: 40px;
+    height: 40px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.song-artist, .song-album {
+    color: var(--text-secondary);
+}
+
+.song-duration {
+    color: var(--text-secondary);
+}
+
+.song-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.play-song-btn, .remove-song-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.play-song-btn:hover {
+    color: var(--primary);
+    transform: scale(1.1);
+}
+
+.remove-song-btn:hover {
+    color: #ff4757;
+    transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+    .playlist-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .playlist-meta {
+        justify-content: center;
+    }
+
+    .playlist-actions {
+        justify-content: center;
+    }
+
+    .songs-header {
+        display: none;
+    }
+
+    .song-item {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .song-number {
+        display: none;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function playAll() {
+    const songs = {{ playlist.songs|map(attribute='id')|list }};
+    if (songs.length > 0) {
+        window.playlist = songs;
+        window.currentIndex = 0;
+        playSong(songs[0]);
+    }
+}
+
+function shufflePlay() {
+    const songs = {{ playlist.songs|map(attribute='id')|list }};
+    if (songs.length > 0) {
+        const shuffled = [...songs].sort(() => Math.random() - 0.5);
+        window.playlist = shuffled;
+        window.currentIndex = 0;
+        playSong(shuffled[0]);
+    }
+}
+
+function removeFromPlaylist(playlistId, songId) {
+    if (confirm('Remove this song from playlist?')) {
+        fetch(`/playlist/${playlistId}/remove-song`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ song_id: songId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function editPlaylist() {
+    const newName = prompt('Enter new playlist name:', '{{ playlist.name }}');
+    if (newName) {
+        fetch(`/playlist/{{ playlist.id }}/edit`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: newName })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
+    }
+}
+
+function deletePlaylist() {
+    if (confirm('Are you sure you want to delete this playlist?')) {
+        fetch(`/playlist/{{ playlist.id }}/delete`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.href = '{{ url_for("library") }}';
+                }
+            });
+    }
+}
+</script>
+{% endblock %}

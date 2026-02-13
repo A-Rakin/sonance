@@ -1,0 +1,501 @@
+{% extends "base.html" %}
+
+{% block title %}Discover{% endblock %}
+
+{% block content %}
+<div class="discover-header">
+    <h1>Discover New Music</h1>
+    <p class="subtitle">Explore trending songs, new releases, and personalized recommendations</p>
+</div>
+
+<div class="discover-grid">
+    <!-- Trending Now Section -->
+    <section class="discover-section trending-section">
+        <div class="section-header">
+            <h2><i class="fas fa-fire"></i> Trending Now</h2>
+            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="song-grid" id="trending-songs">
+            <!-- Songs will be loaded dynamically -->
+        </div>
+    </section>
+
+    <!-- New Releases Section -->
+    <section class="discover-section new-releases-section">
+        <div class="section-header">
+            <h2><i class="fas fa-star"></i> New Releases</h2>
+            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="album-grid" id="new-releases">
+            <!-- Albums will be loaded dynamically -->
+        </div>
+    </section>
+
+    <!-- Recommended for You Section -->
+    <section class="discover-section recommended-section">
+        <div class="section-header">
+            <h2><i class="fas fa-magic"></i> Recommended For You</h2>
+            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="song-grid" id="recommended-songs">
+            <!-- Songs will be loaded dynamically -->
+        </div>
+    </section>
+
+    <!-- Popular Artists Section -->
+    <section class="discover-section artists-section">
+        <div class="section-header">
+            <h2><i class="fas fa-microphone-alt"></i> Popular Artists</h2>
+            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="artist-grid" id="popular-artists">
+            <!-- Artists will be loaded dynamically -->
+        </div>
+    </section>
+
+    <!-- Mood & Genre Section -->
+    <section class="discover-section mood-section">
+        <div class="section-header">
+            <h2><i class="fas fa-smile"></i> Mood & Genre</h2>
+        </div>
+        <div class="mood-grid">
+            <div class="mood-card" data-mood="happy">
+                <i class="fas fa-smile"></i>
+                <span>Happy</span>
+            </div>
+            <div class="mood-card" data-mood="chill">
+                <i class="fas fa-coffee"></i>
+                <span>Chill</span>
+            </div>
+            <div class="mood-card" data-mood="energetic">
+                <i class="fas fa-bolt"></i>
+                <span>Energetic</span>
+            </div>
+            <div class="mood-card" data-mood="sad">
+                <i class="fas fa-sad-tear"></i>
+                <span>Sad</span>
+            </div>
+            <div class="mood-card" data-mood="romantic">
+                <i class="fas fa-heart"></i>
+                <span>Romantic</span>
+            </div>
+            <div class="mood-card" data-mood="workout">
+                <i class="fas fa-dumbbell"></i>
+                <span>Workout</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Recently Played Section -->
+    <section class="discover-section recent-section">
+        <div class="section-header">
+            <h2><i class="fas fa-history"></i> Recently Played</h2>
+            <a href="#" class="view-all">View All <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="recent-list" id="recently-played">
+            <!-- Recently played songs will be loaded -->
+        </div>
+    </section>
+</div>
+
+<style>
+.discover-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.discover-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #fff 0%, #a8b8ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.discover-header .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.discover-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+.discover-section {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-header h2 {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-header h2 i {
+    color: var(--primary);
+}
+
+.view-all {
+    color: var(--text-secondary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s ease;
+}
+
+.view-all:hover {
+    color: var(--primary);
+}
+
+/* Mood Grid */
+.mood-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.mood-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.mood-card:hover {
+    transform: translateY(-5px);
+    background: rgba(108, 92, 231, 0.2);
+    border-color: var(--primary);
+}
+
+.mood-card i {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.mood-card span {
+    display: block;
+    font-weight: 500;
+}
+
+/* Artist Grid */
+.artist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+}
+
+.artist-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.artist-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.artist-card img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 1rem;
+    border: 3px solid var(--primary);
+}
+
+.artist-card h4 {
+    margin-bottom: 0.25rem;
+}
+
+.artist-card p {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* Recent List */
+.recent-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.recent-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.recent-item img {
+    width: 50px;
+    height: 50px;
+    border-radius: 5px;
+    object-fit: cover;
+}
+
+.recent-item-info {
+    flex: 1;
+}
+
+.recent-item-info h4 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.recent-item-info p {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.recent-item .play-btn {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: var(--primary);
+    border: none;
+    color: white;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.recent-item:hover .play-btn {
+    opacity: 1;
+}
+
+/* Loading State */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.loading i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    loadTrendingSongs();
+    loadNewReleases();
+    loadRecommendedSongs();
+    loadPopularArtists();
+    loadRecentlyPlayed();
+
+    // Add click handlers for mood cards
+    document.querySelectorAll('.mood-card').forEach(card => {
+        card.addEventListener('click', function() {
+            const mood = this.dataset.mood;
+            window.location.href = `/discover/mood/${mood}`;
+        });
+    });
+});
+
+function loadTrendingSongs() {
+    const container = document.getElementById('trending-songs');
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading trending songs...</p></div>';
+
+    fetch('/api/songs/trending')
+        .then(response => response.json())
+        .then(songs => {
+            if (songs.length === 0) {
+                container.innerHTML = '<p class="no-results">No trending songs found</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            songs.slice(0, 5).forEach(song => {
+                container.innerHTML += createSongCard(song);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading trending songs:', error);
+            container.innerHTML = '<p class="error">Failed to load trending songs</p>';
+        });
+}
+
+function loadNewReleases() {
+    const container = document.getElementById('new-releases');
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading new releases...</p></div>';
+
+    fetch('/api/albums/new-releases')
+        .then(response => response.json())
+        .then(albums => {
+            if (albums.length === 0) {
+                container.innerHTML = '<p class="no-results">No new releases found</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            albums.slice(0, 6).forEach(album => {
+                container.innerHTML += createAlbumCard(album);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading new releases:', error);
+            container.innerHTML = '<p class="error">Failed to load new releases</p>';
+        });
+}
+
+function loadRecommendedSongs() {
+    const container = document.getElementById('recommended-songs');
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading recommendations...</p></div>';
+
+    fetch('/api/songs/recommended')
+        .then(response => response.json())
+        .then(songs => {
+            if (songs.length === 0) {
+                container.innerHTML = '<p class="no-results">No recommendations found</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            songs.slice(0, 5).forEach(song => {
+                container.innerHTML += createSongCard(song);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading recommendations:', error);
+            container.innerHTML = '<p class="error">Failed to load recommendations</p>';
+        });
+}
+
+function loadPopularArtists() {
+    const container = document.getElementById('popular-artists');
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i><p>Loading artists...</p></div>';
+
+    fetch('/api/artists/popular')
+        .then(response => response.json())
+        .then(artists => {
+            if (artists.length === 0) {
+                container.innerHTML = '<p class="no-results">No artists found</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            artists.slice(0, 6).forEach(artist => {
+                container.innerHTML += createArtistCard(artist);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading artists:', error);
+            container.innerHTML = '<p class="error">Failed to load artists</p>';
+        });
+}
+
+function loadRecentlyPlayed() {
+    const container = document.getElementById('recently-played');
+
+    fetch('/api/user/recently-played')
+        .then(response => response.json())
+        .then(songs => {
+            if (songs.length === 0) {
+                container.innerHTML = '<p class="no-results">No recently played songs</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            songs.slice(0, 10).forEach(song => {
+                container.innerHTML += createRecentItem(song);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading recently played:', error);
+            container.innerHTML = '<p class="error">Failed to load recently played</p>';
+        });
+}
+
+function createSongCard(song) {
+    return `
+        <div class="song-card" data-song-id="${song.id}" onclick="playSong(${song.id})">
+            <img src="${song.cover_url || '/static/default-album.jpg'}" alt="${song.title}">
+            <div class="song-info">
+                <h3>${song.title}</h3>
+                <p>${song.artist}</p>
+            </div>
+            <button class="play-btn" onclick="event.stopPropagation(); playSong(${song.id})">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+    `;
+}
+
+function createAlbumCard(album) {
+    return `
+        <div class="album-card" onclick="window.location.href='/album/${album.id}'">
+            <img src="${album.cover_url || '/static/default-album.jpg'}" alt="${album.title}">
+            <h4>${album.title}</h4>
+            <p>${album.artist}</p>
+        </div>
+    `;
+}
+
+function createArtistCard(artist) {
+    return `
+        <div class="artist-card" onclick="window.location.href='/artist/${artist.id}'">
+            <img src="${artist.image_url || '/static/default-artist.jpg'}" alt="${artist.name}">
+            <h4>${artist.name}</h4>
+            <p>${artist.songs_count || 0} songs</p>
+        </div>
+    `;
+}
+
+function createRecentItem(song) {
+    return `
+        <div class="recent-item" onclick="playSong(${song.id})">
+            <img src="${song.cover_url || '/static/default-album.jpg'}" alt="${song.title}">
+            <div class="recent-item-info">
+                <h4>${song.title}</h4>
+                <p>${song.artist}</p>
+            </div>
+            <button class="play-btn" onclick="event.stopPropagation(); playSong(${song.id})">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+    `;
+}
+</script>
+{% endblock %}

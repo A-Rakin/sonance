@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <h1>Discover Your Next Favorite Song</h1>
+    <div class="search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="search-input" placeholder="Search for songs, artists, or albums...">
+    </div>
+</div>
+
+<div class="featured-section">
+    <h2>Featured Songs <i class="fas fa-fire"></i></h2>
+    <div class="song-grid">
+        {% for song in featured_songs %}
+        <div class="song-card" data-song-id="{{ song.id }}">
+            <img src="{{ url_for('static', filename='uploads/covers/' + (song.album.cover_image if song.album else 'default-album.jpg')) }}" alt="{{ song.title }}">
+            <div class="song-info">
+                <h3>{{ song.title }}</h3>
+                <p>{{ song.artist.name }}</p>
+            </div>
+            <button class="play-btn" onclick="playSong({{ song.id }})">
+                <i class="fas fa-play"></i>
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="stats-section">
+    <div class="stat-card">
+        <i class="fas fa-music"></i>
+        <div class="stat-number" id="total-songs">0</div>
+        <div>Songs</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-microphone-alt"></i>
+        <div class="stat-number" id="total-artists">0</div>
+        <div>Artists</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-compact-disc"></i>
+        <div class="stat-number" id="total-albums">0</div>
+        <div>Albums</div>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-headphones"></i>
+        <div class="stat-number" id="total-plays">0</div>
+        <div>Total Plays</div>
+    </div>
+</div>
+
+<div class="recent-albums">
+    <h2>Recent Albums</h2>
+    <div class="album-grid">
+        {% for album in recent_albums %}
+        <div class="album-card">
+            <img src="{{ url_for('static', filename='uploads/covers/' + album.cover_image) }}" alt="{{ album.title }}">
+            <h4>{{ album.title }}</h4>
+            <p>{{ album.artist.name }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Load statistics
+    fetch('/api/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-songs').textContent = data.songs;
+            document.getElementById('total-artists').textContent = data.artists;
+            document.getElementById('total-albums').textContent = data.albums;
+            document.getElementById('total-plays').textContent = data.plays;
+        });
+</script>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Library{% endblock %}
+
+{% block content %}
+<div class="library-header">
+    <h1>Your Music Library</h1>
+    <div class="view-options">
+        <button class="view-btn active" data-view="grid" onclick="switchView('grid')">
+            <i class="fas fa-th"></i>
+        </button>
+        <button class="view-btn" data-view="list" onclick="switchView('list')">
+            <i class="fas fa-list"></i>
+        </button>
+    </div>
+</div>
+
+<div class="library-tabs">
+    <button class="tab-btn active" onclick="showTab('songs')">Songs</button>
+    <button class="tab-btn" onclick="showTab('albums')">Albums</button>
+    <button class="tab-btn" onclick="showTab('artists')">Artists</button>
+    <button class="tab-btn" onclick="showTab('playlists')">Playlists</button>
+</div>
+
+<div id="songs-tab" class="tab-content active">
+    <div class="song-grid">
+        {% for song in songs %}
+        <div class="song-card" data-song-id="{{ song.id }}">
+            <img src="{{ url_for('static', filename='uploads/covers/' + (song.album.cover_image if song.album else 'default-album.jpg')) }}" alt="{{ song.title }}">
+            <div class="song-info">
+                <h3>{{ song.title }}</h3>
+                <p>{{ song.artist.name }}</p>
+                <span class="song-duration">{{ song.duration // 60 }}:{{ '%02d' % (song.duration % 60) }}</span>
+            </div>
+            <div class="song-actions">
+                <button class="play-btn" onclick="playSong({{ song.id }})">
+                    <i class="fas fa-play"></i>
+                </button>
+                <button class="favorite-btn" onclick="toggleFavorite({{ song.id }}, this)">
+                    <i class="far fa-heart"></i>
+                </button>
+                <button class="more-btn" onclick="showSongOptions({{ song.id }})">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="albums-tab" class="tab-content">
+    <div class="album-grid">
+        {% for album in albums %}
+        <div class="album-card">
+            <img src="{{ url_for('static', filename='uploads/covers/' + album.cover_image) }}" alt="{{ album.title }}">
+            <h4>{{ album.title }}</h4>
+            <p>{{ album.artist.name }}</p>
+            <p class="album-year">{{ album.release_date.year if album.release_date else 'Unknown' }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="artists-tab" class="tab-content">
+    <div class="artist-grid">
+        {% for artist in artists %}
+        <div class="artist-card">
+            <img src="{{ url_for('static', filename='uploads/covers/' + artist.image) }}" alt="{{ artist.name }}">
+            <h4>{{ artist.name }}</h4>
+            <p>{{ artist.songs|length }} songs</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div id="playlists-tab" class="tab-content">
+    <button class="create-playlist-btn" onclick="createPlaylist()">
+        <i class="fas fa-plus"></i> Create Playlist
+    </button>
+    <div class="playlist-grid">
+        <!-- Playlists will be loaded dynamically -->
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(tabName) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Show selected tab
+    document.getElementById(tabName + '-tab').classList.add('active');
+    event.target.classList.add('active');
+}
+
+function showSongOptions(songId) {
+    // Create options dropdown
+    const options = [
+        { text: 'Add to Playlist', action: () => showPlaylists(songId) },
+        { text: 'View Artist', action: () => viewArtist(songId) },
+        { text: 'View Album', action: () => viewAlbum(songId) }
+    ];
+
+    // Implement dropdown menu
+    console.log('Show options for song:', songId);
+}
+
+function showPlaylists(songId) {
+    // Show playlists modal
+    fetch('/api/playlists')
+        .then(response => response.json())
+        .then(playlists => {
+            // Display playlists in modal
+            console.log('Available playlists:', playlists);
+        });
+}
+</script>
+{% endblock %}
